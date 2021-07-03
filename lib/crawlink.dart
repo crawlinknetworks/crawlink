@@ -6,13 +6,15 @@ import 'package:flutter/widgets.dart';
 class Crawlink extends InheritedWidget {
   late final CrawlinkRouteInformationParser routeInformationParser;
   late final CrawlinkRouterDelegate routerDelegate;
+  late final CrawlinkBackButtonDispatcher backButtonDispatcher;
   final List<CrawlinkRouter> routers;
 
   final CrawlinkRouter? fallbackRouter;
+  final _ValueHolder<Crawlink> _previousCrawlink = _ValueHolder<Crawlink>();
 
-  Crawlink(
-    BuildContext context, {
+  Crawlink({
     Key? key,
+    required BuildContext context,
     required Builder builder,
     required this.routers,
     this.fallbackRouter,
@@ -22,15 +24,31 @@ class Crawlink extends InheritedWidget {
         ) {
     routeInformationParser = CrawlinkRouteInformationParser(this);
     routerDelegate = CrawlinkRouterDelegate(this);
+    backButtonDispatcher = CrawlinkBackButtonDispatcher(routerDelegate);
+    _initPreviousCrawlink(context);
+  }
+
+  Future _initPreviousCrawlink(BuildContext context) async {
+    // TODO : Workaround. Error: dependOnInheritedWidgetOfExactType<Crawlink>() or dependOnInheritedElement() was called before _UsersRouterPageState.initState() completed.
+    // Execure in next frame.
+    await Future.delayed(Duration.zero);
+    _previousCrawlink._value = Crawlink.of(context);
   }
 
   String get activePath {
+    String path = "";
     if (routerDelegate.currentConfiguration != null) {
-      String path =
-          routerDelegate.currentConfiguration!.uri.pathSegments.join('/');
-      return '/$path';
+      path = routerDelegate.currentConfiguration!.location;
     }
-    return '/';
+    return CrawlinkRoutePath.sanitizeUrl('$path');
+  }
+
+  String get rootPath {
+    String path = "";
+    if (_previousCrawlink._value != null) {
+      path = _previousCrawlink._value!.activePath;
+    }
+    return CrawlinkRoutePath.sanitizeUrl('$path');
   }
 
   /// Return Crawlink nearest [Crawlink] instance
@@ -39,29 +57,22 @@ class Crawlink extends InheritedWidget {
 
   void push(BuildContext context, String url,
       {Map<String, String> params = const {}, Map<String, dynamic>? data}) {
-    // Sanitized route url
     var sanitizedUrl = CrawlinkRoutePath.sanitizeUrl(url);
-
-//     Find absolute path of the url
-//     String rootPath = '';
-//     Crawlink? previous = Crawlink.of(context);
-//     if (previous != null) {
-//       rootPath = previous.activePath;
-//     }
-//     _absolutePath = '$rootPath$sanitizedUrl';
-
-    // add '/' at begining of the location
     CrawlinkRoutePath path =
-        CrawlinkRoutePath('/$sanitizedUrl', params: params, data: data);
+        CrawlinkRoutePath('$sanitizedUrl', params: params, data: data);
     routerDelegate.push(path);
   }
 
-  void pop() {
-    routerDelegate.pop();
+  void pop(BuildContext context) {
+    Navigator.of(context).pop();
   }
 
   @override
   bool updateShouldNotify(covariant InheritedWidget oldWidget) => true;
+}
+
+class _ValueHolder<T> {
+  T? _value;
 }
 
 /// Router trigger infromation
@@ -159,6 +170,10 @@ class CrawlinkRoutePath {
     });
     _segmentMap = _segments.asMap();
     _query.addAll(params);
+
+    // Add dynamic params in the url
+    _sanitizedUrl =
+        sanitizeUrl(_segments.map((segment) => segment._value).join());
   }
 
   static String sanitizeUrl(String url) {
@@ -248,6 +263,18 @@ class CrawlinkRoutePath {
   }
 }
 
+class CrawlinkBackButtonDispatcher extends RootBackButtonDispatcher {
+  // 2
+  final CrawlinkRouterDelegate _routerDelegate;
+
+  CrawlinkBackButtonDispatcher(this._routerDelegate) : super();
+
+  // 3
+  Future<bool> didPopRoute() {
+    return _routerDelegate.popRoute();
+  }
+}
+
 /// CrawlinkRouteInformationParser convert the url to
 /// [CrawlinkRoutePath]
 class CrawlinkRouteInformationParser
@@ -265,7 +292,9 @@ class CrawlinkRouteInformationParser
 
   @override
   RouteInformation restoreRouteInformation(CrawlinkRoutePath path) {
-    var info = RouteInformation(location: path.location);
+    var info = RouteInformation(
+        location: CrawlinkRoutePath.sanitizeUrl(
+            '${crawlink.rootPath}${path.location}'));
     return info;
   }
 }
@@ -319,10 +348,16 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
               if (!route.didPop(result)) {
                 return false;
               }
-              // pop();
+
+              notifyListeners();
               return true;
             })
         : Container();
+  }
+
+  @override
+  Future<bool> popRoute() {
+    return super.popRoute();
   }
 
   @override
@@ -396,6 +431,14 @@ extension BuildContextCrawlinkExtension on BuildContext {
     var crawlink = Crawlink.of(this);
     if (crawlink != null) {
       return crawlink.routerDelegate;
+    }
+  }
+
+  /// Current Back button Dispatcher
+  CrawlinkBackButtonDispatcher? get backButtonDispatcher {
+    var crawlink = Crawlink.of(this);
+    if (crawlink != null) {
+      return crawlink.backButtonDispatcher;
     }
   }
 }

@@ -37,13 +37,14 @@ class _MyAppState extends State<MyApp> {
 
   _initCrawlink() {
     return Crawlink(
-      context,
+      context: context,
       builder: Builder(
         builder: (context) {
           // print('MyApp : builder');
           return MaterialApp.router(
             routeInformationParser: context.routeInformationParser!,
             routerDelegate: context.routerDelegate!,
+            backButtonDispatcher: context.backButtonDispatcher,
           );
         },
       ),
