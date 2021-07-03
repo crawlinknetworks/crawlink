@@ -12,18 +12,31 @@ void main() {
 }
 
 class MyApp extends StatefulWidget {
-  MyApp({Key? key}) : super(key: key) {}
+  MyApp({Key? key}) : super(key: key) {
+    print('MyApp:init');
+  }
 
   @override
   _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
+  late Crawlink _crawlink;
+
+  @override
+  void initState() {
+    super.initState();
+    _crawlink = _initCrawlink();
+  }
+
   @override
   Widget build(BuildContext context) {
-    // print('MyApp : build');
+    print('MyApp : build');
+    return _crawlink;
+  }
+
+  _initCrawlink() {
     return Crawlink(
-      context: context,
       builder: Builder(
         builder: (context) {
           // print('MyApp : builder');
@@ -37,14 +50,14 @@ class _MyAppState extends State<MyApp> {
         CrawlinkRouter(
           context: context,
           url: '/',
-          onPush: (context, path) => <Page>[
+          onPush: (path) => <Page>[
             MaterialPage(child: HomePage()),
           ],
         ),
         CrawlinkRouter(
           context: context,
           url: '/users',
-          onPush: (context, path) => <Page>[
+          onPush: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: UsersRouterPage()),
           ],
@@ -63,7 +76,7 @@ class _MyAppState extends State<MyApp> {
         CrawlinkRouter(
           context: context,
           url: '/profile',
-          onPush: (context, path) => <Page>[
+          onPush: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: ProfilePage()),
           ],
@@ -71,7 +84,7 @@ class _MyAppState extends State<MyApp> {
         CrawlinkRouter(
           context: context,
           url: '/settings',
-          onPush: (context, path) => <Page>[
+          onPush: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: SettingsPage()),
           ],

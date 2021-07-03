@@ -4,45 +4,54 @@ import 'package:flutter/widgets.dart';
 
 /// Imparative way Url navigator based on Flutter Navigator 2.0
 class Crawlink extends InheritedWidget {
-  final CrawlinkRouteInformationParser routeInformationParser =
-      CrawlinkRouteInformationParser();
-  final CrawlinkRouterDelegate routerDelegate = CrawlinkRouterDelegate();
+  late final CrawlinkRouteInformationParser routeInformationParser;
+  late final CrawlinkRouterDelegate routerDelegate;
   final List<CrawlinkRouter> routers;
 
   final CrawlinkRouter? fallbackRouter;
 
   Crawlink({
     Key? key,
-    required BuildContext context,
     required Builder builder,
     required this.routers,
     this.fallbackRouter,
   }) : super(
           key: key,
           child: builder,
-        ) {}
+        ) {
+    routeInformationParser = CrawlinkRouteInformationParser(this);
+    routerDelegate = CrawlinkRouterDelegate(this);
+  }
 
   String get activePath {
-    String path =
-        routerDelegate.currentConfiguration.uri.pathSegments.join('/');
-    return '/$path';
+    if (routerDelegate.currentConfiguration != null) {
+      String path =
+          routerDelegate.currentConfiguration!.uri.pathSegments.join('/');
+      return '/$path';
+    }
+    return '/';
   }
 
   /// Return Crawlink nearest [Crawlink] instance
   static Crawlink? of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<Crawlink>();
 
-  void push(String location,
+  void push(BuildContext context, String url,
       {Map<String, String> params = const {}, Map<String, dynamic>? data}) {
     // Sanitized route url
-    location = location
-        .split('/')
-        .where((segment) => segment.trim().isNotEmpty)
-        .join();
+    var sanitizedUrl = CrawlinkRoutePath.sanitizeUrl(url);
+
+//   Find absolute path of the url
+//     String rootPath = '';
+//     Crawlink? previous = Crawlink.of(context);
+//     if (previous != null) {
+//       rootPath = previous.activePath;
+//     }
+//     _absolutePath = '$rootPath$sanitizedUrl';
 
     // add '/' at begining of the location
     CrawlinkRoutePath path =
-        CrawlinkRoutePath('/$location', params: params, data: data);
+        CrawlinkRoutePath('/$sanitizedUrl', params: params, data: data);
     routerDelegate.push(path);
   }
 
@@ -64,30 +73,26 @@ class CrawlinkRouter {
 
   /// Trigger when new url pushed to the navigator,
   /// Return [List<MaterialPage>]
-  final List<Page> Function(BuildContext context, CrawlinkRoutePath path)
-      onPush;
+  final List<Page> Function(CrawlinkRoutePath path) onPush;
 
   /// Override default back locatoin with custome.
-  final Future<String> Function(BuildContext context, CrawlinkRoutePath path)?
-      onPop;
+  final Future<String> Function(CrawlinkRoutePath path)? onPop;
 
   /// Check the new route can be allowed or not.
-  final Future<bool> Function(BuildContext context, CrawlinkRoutePath path)?
-      canPush;
+  final Future<bool> Function(CrawlinkRoutePath path)? canPush;
 
   /// Resolve route data before actual navigation, this data can be retrived
   /// `path.data` in onPush
   final Future<Map<String, dynamic>> Function(
-      BuildContext context, CrawlinkRoutePath path)? resolve;
+      CrawlinkRoutePath path, Map<String, dynamic> data)? resolve;
 
   /// Provide a router progress widget to display till route completed
-  final Page Function(BuildContext context, CrawlinkRoutePath path)?
-      progressPage;
+  // final Page Function(  CrawlinkRoutePath path)?
+  //     progressPage;
 
   late List<_CrawlinkPathSegment> _segments;
   late Map<int, _CrawlinkPathSegment> _segmentMap;
 
-  late String _absolutePath;
   late String _sanitizedUrl;
 
   CrawlinkRouter({
@@ -97,20 +102,12 @@ class CrawlinkRouter {
     this.onPop,
     this.canPush,
     this.resolve,
-    this.progressPage,
+    // this.progressPage,
   }) {
     // Refactor given path
     _sanitizedUrl = CrawlinkRoutePath.sanitizeUrl(url);
     _segments = CrawlinkRoutePath.urlToSegments(url);
     _segmentMap = _segments.asMap();
-
-    // Find absolute path of the url
-    String rootPath = '';
-    Crawlink? previous = Crawlink.of(context);
-    if (previous != null) {
-      rootPath = previous.activePath;
-    }
-    _absolutePath = '$rootPath$_sanitizedUrl';
   }
 }
 
@@ -141,6 +138,7 @@ class CrawlinkRoutePath {
   Map<String, String> _params = {};
   Map<String, dynamic>? data;
   CrawlinkRouter? _router;
+  List<Page>? _pages;
 
   CrawlinkRoutePath(String location,
       {Map<String, String> params = const {}, this.data}) {
@@ -250,6 +248,10 @@ class CrawlinkRoutePath {
 /// [CrawlinkRoutePath]
 class CrawlinkRouteInformationParser
     extends RouteInformationParser<CrawlinkRoutePath> {
+  Crawlink crawlink;
+
+  CrawlinkRouteInformationParser(this.crawlink);
+
   @override
   Future<CrawlinkRoutePath> parseRouteInformation(
       RouteInformation routeInformation) async {
@@ -259,124 +261,104 @@ class CrawlinkRouteInformationParser
 
   @override
   RouteInformation restoreRouteInformation(CrawlinkRoutePath path) {
-    return RouteInformation(location: path.location);
+    var info = RouteInformation(location: path.location);
+    return info;
   }
 }
 
 class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
     with ChangeNotifier, PopNavigatorRouterDelegateMixin<CrawlinkRoutePath> {
-  final GlobalKey<NavigatorState> navigatorKey;
-  // final CrawlinkRouteInformationParser routeParser;
+  late final Crawlink crawlink;
+  late final GlobalKey<NavigatorState> _navigatorKey =
+      GlobalKey<NavigatorState>();
+
   CrawlinkRoutePath? _oldPath;
-  CrawlinkRoutePath _path = CrawlinkRoutePath('');
-  // List<CrawlinkRoutePath> _paths = [];
+  CrawlinkRoutePath? _path;
 
-  List<Page> _pages = [];
+  CrawlinkRouterDelegate(this.crawlink) {
+    print('CrawlinkRouterDelegate:init');
+  }
 
-  CrawlinkRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
-
-  ValueNotifier<List<Page>> _pagesNotifier = ValueNotifier<List<Page>>([]);
-
-  // int _counter = 0;
-
-  CrawlinkRoutePath get currentConfiguration {
+  CrawlinkRoutePath? get currentConfiguration {
     return _path;
   }
 
-  void push(path) {
+  @override
+  GlobalKey<NavigatorState> get navigatorKey => _navigatorKey;
+
+  List<Page> get pages {
+    if (_path != null) {
+      return _path!._pages ?? [];
+    }
+    return [];
+  }
+
+  void push(path) async {
     _path = path;
+    notifyListeners();
+    await setNewRoutePath(path);
     notifyListeners();
   }
 
   pop() {
-    // _paths.removeLast();
-    // _path = _paths.removeLast();
     notifyListeners();
   }
 
   @override
   Widget build(BuildContext context) {
-    // print('build : ${_counter++}');
-    Crawlink? crawlink = Crawlink.of(context);
-    Page? progressPage;
-    if (crawlink != null) {
-      CrawlinkRouter? router = _path._router ?? _path.findRouter(crawlink);
-      if (router != null) {
-        if (router.progressPage != null) {
-          progressPage = router.progressPage!(context, _path);
-        }
-        if (router.canPush != null) {
-          router.canPush!(context, _path).then((canPush) async {
-            if (canPush) {
-              if (router.resolve != null) {
-                return await router.resolve!(context, _path);
-              }
-            } else {
-              if (_oldPath != null) {
-                _setNewPath(_oldPath!, replace: true);
-              }
-              _pagesNotifier.value = _pages;
-            }
-            return null;
-          }).then((Map<String, dynamic>? data) async {
-            if (data != null) {
-              var pages = router.onPush(context, _path);
-              _setNewPath(_path);
-              return pages;
-            } else {
-              return _pages;
-            }
-          }).then((pages) {
-            progressPage = null;
-            _pagesNotifier.value = pages;
-          }).onError((e, stackTrace) => throw e!);
-        } else {
-          progressPage = null;
-          _pagesNotifier.value = router.onPush(context, _path);
-          _setNewPath(_path);
-        }
-      }
-    }
+    print('build: ${pages.length}');
 
-    return ValueListenableBuilder(
-        valueListenable: _pagesNotifier,
-        builder: (context, List<Page> pages, child) {
-          var pageList = progressPage != null
-              ? [..._pages, progressPage!]
-              : pages.length > 0
-                  ? pages
-                  : _pages;
-          return pageList.length <= 0
-              ? Container()
-              : Navigator(
-                  key: navigatorKey,
-                  pages: pageList,
-                  onPopPage: (route, result) {
-                    if (!route.didPop(result)) {
-                      return false;
-                    }
-                    pop();
-                    return true;
-                  });
-        });
+    return pages.length > 0
+        ? Navigator(
+            key: _navigatorKey,
+            pages: pages,
+            onPopPage: (route, result) {
+              if (!route.didPop(result)) {
+                return false;
+              }
+              // pop();
+              return true;
+            })
+        : Container();
   }
 
   @override
   Future<void> setNewRoutePath(CrawlinkRoutePath path) async {
-    _setNewPath(path);
-  }
+    CrawlinkRouter? router = path._router ?? path.findRouter(crawlink);
+    if (router != null) {
+      // Check new rout can be pushed or not
+      bool canPush = true;
+      if (router.canPush != null) {
+        canPush = await router.canPush!(path);
+      }
 
-  _setNewPath(path, {bool replace = false}) {
-    if (_oldPath != path) {
-      _oldPath = path;
-      _path = path;
-      // if (replace && _paths.length > 0) {
-      //   _paths[_paths.length - 1] = path;
-      // } else {
-      //   _paths.add(path);
-      // }
+      // Resolve Data if required before route
+      var data = path.data ?? {};
+      if (canPush) {
+        if (router.resolve != null) {
+          data = await router.resolve!(path, data);
+        }
+
+        // Get List of Pages to be render in UI
+        var pages = router.onPush(path);
+
+        path.data = data;
+        path._router = router;
+        path._pages = pages;
+
+        _path = path;
+        // _setNewPath(path);
+      }
     }
   }
+
+  // _setNewPath(path, {bool replace = false}) {
+  //   if (_oldPath != path) {
+  //     _oldPath = path;
+  //     _path = path;
+  //     notifyListeners();
+  //   }
+  // }
 
   // void navigatePath(CrawlinkRoutePath path) {
   //   // print('HomeRouterDelegate: navigate : path = $path');

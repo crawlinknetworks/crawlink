@@ -8,7 +8,6 @@ class UsersRouterPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Crawlink(
-        context: context,
         builder: Builder(
           builder: (context) {
             return Center(
@@ -27,7 +26,8 @@ class UsersRouterPage extends StatelessWidget {
                   ),
                   TextButton(
                       onPressed: () {
-                        Crawlink.of(context)!.push(':id', params: {'id': "1"});
+                        Crawlink.of(context)!
+                            .push(context, ':id', params: {'id': "1"});
                       },
                       child: Text('Open User 1')),
                   SizedBox(
@@ -35,7 +35,8 @@ class UsersRouterPage extends StatelessWidget {
                   ),
                   TextButton(
                       onPressed: () {
-                        Crawlink.of(context)!.push(':id', params: {'id': "2"});
+                        Crawlink.of(context)!
+                            .push(context, ':id', params: {'id': "2"});
                       },
                       child: Text('Open User 2')),
                   SizedBox(
@@ -43,7 +44,8 @@ class UsersRouterPage extends StatelessWidget {
                   ),
                   TextButton(
                       onPressed: () {
-                        Crawlink.of(context)!.push(':id', params: {'id': "3"});
+                        Crawlink.of(context)!
+                            .push(context, ':id', params: {'id': "3"});
                       },
                       child: Text('Open  User 3')),
                 ],
@@ -55,14 +57,14 @@ class UsersRouterPage extends StatelessWidget {
           CrawlinkRouter(
             context: context,
             url: "",
-            onPush: (context, path) => [
+            onPush: (path) => [
               MaterialPage(child: UsersPage()),
             ],
           ),
           CrawlinkRouter(
             context: context,
             url: ":id",
-            onPush: (context, path) => [
+            onPush: (path) => [
               MaterialPage(child: UserPage(path: path)),
             ],
           ),
