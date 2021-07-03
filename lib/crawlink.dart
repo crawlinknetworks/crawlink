@@ -9,52 +9,40 @@ class Crawlink extends InheritedWidget {
   final CrawlinkRouterDelegate routerDelegate = CrawlinkRouterDelegate();
   final List<CrawlinkRouter> routers;
 
+  final CrawlinkRouter? fallbackRouter;
+
   Crawlink({
     Key? key,
+    required BuildContext context,
     required Builder builder,
     required this.routers,
-  }) : super(key: key, child: builder) {}
+    this.fallbackRouter,
+  }) : super(
+          key: key,
+          child: builder,
+        ) {}
+
+  String get activePath {
+    String path =
+        routerDelegate.currentConfiguration.uri.pathSegments.join('/');
+    return '/$path';
+  }
 
   /// Return Crawlink nearest [Crawlink] instance
   static Crawlink? of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<Crawlink>();
 
-  CrawlinkRouter? findRouter(CrawlinkRoutePath path) {
-    Map<String, String> params = {};
-    try {
-      CrawlinkRouter router = this.routers.firstWhere((router) {
-        params.clear();
-        if (router._segmentMap.length == path._segmentMap.length) {
-          for (int i = 0; i < router._segmentMap.length; i++) {
-            if (router._segmentMap[i]!._segment !=
-                    path._segmentMap[i]!._segment &&
-                router._segmentMap[i]!._value != null) {
-              return false;
-            }
-            if (router._segmentMap[i]!._value == null) {
-              params[router._segmentMap[i]!._segment] =
-                  path._segmentMap[i]!._value!;
-            }
-          }
-          return true;
-        }
-        return false;
-      });
-      path._params.clear();
-      path._params.addAll(params);
-      return router;
-    } catch (e) {}
-
-    try {
-      return routers.where((router) => router.url == '**').first;
-    } catch (e) {}
-    return null;
-  }
-
   void push(String location,
       {Map<String, String> params = const {}, Map<String, dynamic>? data}) {
+    // Sanitized route url
+    location = location
+        .split('/')
+        .where((segment) => segment.trim().isNotEmpty)
+        .join();
+
+    // add '/' at begining of the location
     CrawlinkRoutePath path =
-        CrawlinkRoutePath(location, params: params, data: data);
+        CrawlinkRoutePath('/$location', params: params, data: data);
     routerDelegate.push(path);
   }
 
@@ -70,7 +58,9 @@ class Crawlink extends InheritedWidget {
 class CrawlinkRouter {
   /// URL for routing
   /// eg. 'root/path/:id/view'
-  String url;
+  final String url;
+
+  // String _fullUrl;
 
   /// Trigger when new url pushed to the navigator,
   /// Return [List<MaterialPage>]
@@ -97,7 +87,11 @@ class CrawlinkRouter {
   late List<_CrawlinkPathSegment> _segments;
   late Map<int, _CrawlinkPathSegment> _segmentMap;
 
+  late String _absolutePath;
+  late String _sanitizedUrl;
+
   CrawlinkRouter({
+    required BuildContext context,
     required this.url,
     required this.onPush,
     this.onPop,
@@ -105,28 +99,34 @@ class CrawlinkRouter {
     this.resolve,
     this.progressPage,
   }) {
-    _segments = url
-        .split('/')
-        .where((segment) => segment.isNotEmpty)
-        .map((segment) => _CrawlinkPathSegment(segment))
-        .toList();
+    // Refactor given path
+    _sanitizedUrl = CrawlinkRoutePath.sanitizeUrl(url);
+    _segments = CrawlinkRoutePath.urlToSegments(url);
     _segmentMap = _segments.asMap();
+
+    // Find absolute path of the url
+    String rootPath = '';
+    Crawlink? previous = Crawlink.of(context);
+    if (previous != null) {
+      rootPath = previous.activePath;
+    }
+    _absolutePath = '$rootPath$_sanitizedUrl';
   }
 }
 
 class _CrawlinkPathSegment {
-  late String _segment;
+  late String _param;
   String? _value;
-  _CrawlinkPathSegment(String segment) {
-    if (segment.startsWith(':')) {
-      _segment = segment.substring(1);
+  _CrawlinkPathSegment(String param) {
+    if (param.startsWith(':')) {
+      _param = param.substring(1);
     } else {
-      _segment = segment;
-      _value = segment;
+      _param = param;
+      _value = param;
     }
   }
 
-  String get segment => _segment;
+  String get param => _param;
   String? get value => _value;
   set value(val) => _value = val;
 }
@@ -136,34 +136,46 @@ class CrawlinkRoutePath {
   late List<_CrawlinkPathSegment> _segments;
   late Map<int, _CrawlinkPathSegment> _segmentMap;
   late Uri _uri;
-  late String _location;
+  late String _sanitizedUrl;
   Map<String, String> _query = {};
   Map<String, String> _params = {};
   Map<String, dynamic>? data;
+  CrawlinkRouter? _router;
 
   CrawlinkRoutePath(String location,
       {Map<String, String> params = const {}, this.data}) {
-    _uri = Uri.parse(location);
+    _sanitizedUrl = sanitizeUrl(location);
+    _uri = Uri.parse(_sanitizedUrl);
     _query.addAll(_uri.queryParameters);
-    _segments = _uri.pathSegments
-        .where((segment) => segment.isNotEmpty)
-        .map((segment) => _CrawlinkPathSegment(segment))
-        .toList();
 
+    _segments = urlToSegments(_sanitizedUrl);
     _segments.forEach((segment) {
       if (segment._value == null) {
-        segment._value = params[segment._segment];
-        params.remove(segment._segment);
+        segment._value = params[segment._param];
+        params.remove(segment._param);
       }
     });
     _segmentMap = _segments.asMap();
     _query.addAll(params);
+  }
 
-    _location = _segments.map((segment) => segment._value).toList().join('/');
+  static String sanitizeUrl(String url) {
+    var result =
+        url.split('/').where((segment) => segment.trim().isNotEmpty).join('/');
+    return '/$result';
+  }
+
+  static List<_CrawlinkPathSegment> urlToSegments(String url) {
+    var result = url
+        .split('/')
+        .where((segment) => segment.trim().isNotEmpty)
+        .map((segment) => _CrawlinkPathSegment(segment))
+        .toList();
+    return result;
   }
 
   /// The original location of route
-  String get location => _location;
+  String get location => _sanitizedUrl;
 
   /// Parsed [Uri] from location
   Uri get uri => _uri;
@@ -198,9 +210,39 @@ class CrawlinkRoutePath {
     return _params[key] ?? '';
   }
 
+  CrawlinkRouter? findRouter(Crawlink crawlink) {
+    Map<String, String> params = {};
+    CrawlinkRouter? result;
+    try {
+      CrawlinkRouter router = crawlink.routers.firstWhere((router) {
+        params.clear();
+        if (router._segmentMap.length == this._segmentMap.length) {
+          for (int i = 0; i < router._segmentMap.length; i++) {
+            if (router._segmentMap[i]!._param != this._segmentMap[i]!._param &&
+                router._segmentMap[i]!._value != null) {
+              return false;
+            }
+            if (router._segmentMap[i]!._value == null) {
+              params[router._segmentMap[i]!._param] =
+                  this._segmentMap[i]!._value!;
+            }
+          }
+          return true;
+        }
+        return false;
+      });
+      this._params.clear();
+      this._params.addAll(params);
+      result = router;
+    } catch (e) {}
+    result = result ?? crawlink.fallbackRouter;
+    this._router = result;
+    return result;
+  }
+
   @override
   String toString() {
-    return _location;
+    return _sanitizedUrl;
   }
 }
 
@@ -211,7 +253,8 @@ class CrawlinkRouteInformationParser
   @override
   Future<CrawlinkRoutePath> parseRouteInformation(
       RouteInformation routeInformation) async {
-    return CrawlinkRoutePath(routeInformation.location ?? '');
+    var path = CrawlinkRoutePath(routeInformation.location ?? '');
+    return path;
   }
 
   @override
@@ -226,13 +269,15 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
   // final CrawlinkRouteInformationParser routeParser;
   CrawlinkRoutePath? _oldPath;
   CrawlinkRoutePath _path = CrawlinkRoutePath('');
-  List<CrawlinkRoutePath> _paths = [];
+  // List<CrawlinkRoutePath> _paths = [];
 
   List<Page> _pages = [];
 
   CrawlinkRouterDelegate() : navigatorKey = GlobalKey<NavigatorState>();
 
   ValueNotifier<List<Page>> _pagesNotifier = ValueNotifier<List<Page>>([]);
+
+  // int _counter = 0;
 
   CrawlinkRoutePath get currentConfiguration {
     return _path;
@@ -244,18 +289,18 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
   }
 
   pop() {
-    _paths.removeLast();
-    _path = _paths.removeLast();
+    // _paths.removeLast();
+    // _path = _paths.removeLast();
     notifyListeners();
   }
 
   @override
   Widget build(BuildContext context) {
-    print('build');
+    // print('build : ${_counter++}');
     Crawlink? crawlink = Crawlink.of(context);
     Page? progressPage;
     if (crawlink != null) {
-      CrawlinkRouter? router = crawlink.findRouter(_path);
+      CrawlinkRouter? router = _path._router ?? _path.findRouter(crawlink);
       if (router != null) {
         if (router.progressPage != null) {
           progressPage = router.progressPage!(context, _path);
@@ -325,11 +370,11 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
     if (_oldPath != path) {
       _oldPath = path;
       _path = path;
-      if (replace && _paths.length > 0) {
-        _paths[_paths.length - 1] = path;
-      } else {
-        _paths.add(path);
-      }
+      // if (replace && _paths.length > 0) {
+      //   _paths[_paths.length - 1] = path;
+      // } else {
+      //   _paths.add(path);
+      // }
     }
   }
 
@@ -354,12 +399,18 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
 /// Extention of build context
 extension BuildContextCrawlinkExtension on BuildContext {
   /// Current Route Infromation Parser
-  CrawlinkRouteInformationParser get routeInformationParser {
+  CrawlinkRouteInformationParser? get routeInformationParser {
     var crawlink = Crawlink.of(this);
-    return crawlink!.routeInformationParser;
+    if (crawlink != null) {
+      return crawlink.routeInformationParser;
+    }
   }
 
   /// Current Router Deligate
-  CrawlinkRouterDelegate get routerDelegate =>
-      Crawlink.of(this)!.routerDelegate;
+  CrawlinkRouterDelegate? get routerDelegate {
+    var crawlink = Crawlink.of(this);
+    if (crawlink != null) {
+      return crawlink.routerDelegate;
+    }
+  }
 }
