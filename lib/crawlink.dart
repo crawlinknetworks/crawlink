@@ -10,7 +10,8 @@ class Crawlink extends InheritedWidget {
 
   final CrawlinkRouter? fallbackRouter;
 
-  Crawlink({
+  Crawlink(
+    BuildContext context, {
     Key? key,
     required Builder builder,
     required this.routers,
@@ -41,7 +42,7 @@ class Crawlink extends InheritedWidget {
     // Sanitized route url
     var sanitizedUrl = CrawlinkRoutePath.sanitizeUrl(url);
 
-//   Find absolute path of the url
+//     Find absolute path of the url
 //     String rootPath = '';
 //     Crawlink? previous = Crawlink.of(context);
 //     if (previous != null) {
@@ -140,9 +141,12 @@ class CrawlinkRoutePath {
   CrawlinkRouter? _router;
   List<Page>? _pages;
 
-  CrawlinkRoutePath(String location,
-      {Map<String, String> params = const {}, this.data}) {
-    _sanitizedUrl = sanitizeUrl(location);
+  CrawlinkRoutePath(
+    String url, {
+    Map<String, String> params = const {},
+    this.data,
+  }) {
+    _sanitizedUrl = sanitizeUrl(url);
     _uri = Uri.parse(_sanitizedUrl);
     _query.addAll(_uri.queryParameters);
 
@@ -272,7 +276,6 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
   late final GlobalKey<NavigatorState> _navigatorKey =
       GlobalKey<NavigatorState>();
 
-  CrawlinkRoutePath? _oldPath;
   CrawlinkRoutePath? _path;
 
   CrawlinkRouterDelegate(this.crawlink) {
