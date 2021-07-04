@@ -1,4 +1,8 @@
-## 0.0.2
+## 0.0.4
+
+* Documentation updated.
+
+## 0.0.3
 
 * Fixed Addressbar issue.
 
