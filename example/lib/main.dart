@@ -2,7 +2,8 @@ import 'package:crawlink/crawlink.dart';
 import 'package:example/home.dart';
 import 'package:example/profile.dart';
 import 'package:example/settings.dart';
-import 'package:example/users-route.dart';
+import 'package:example/user.dart';
+import 'package:example/users.dart';
 import 'package:flutter/material.dart';
 import 'package:url_strategy/url_strategy.dart';
 
@@ -44,49 +45,44 @@ class _MyAppState extends State<MyApp> {
           return MaterialApp.router(
             routeInformationParser: context.routeInformationParser!,
             routerDelegate: context.routerDelegate!,
-            backButtonDispatcher: context.backButtonDispatcher,
           );
         },
       ),
       routers: [
         CrawlinkRouter(
-          context: context,
           url: '/',
-          onPush: (path) => <Page>[
+          onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
           ],
         ),
         CrawlinkRouter(
-          context: context,
           url: '/users',
-          onPush: (path) => <Page>[
+          onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
-            MaterialPage(child: UsersRouterPage()),
+            MaterialPage(child: UsersPage()),
           ],
         ),
-        // CrawlinkRouter(
-        //   url: '/users/:id',
-        //   onPush: (context, path) => <Page>[
-        //     MaterialPage(child: HomePage()),
-        //     MaterialPage(child: UsersPage()),
-        //     MaterialPage(
-        //         child: UserPage(
-        //       path: path,
-        //     )),
-        //   ],
-        // ),
         CrawlinkRouter(
-          context: context,
+          url: '/users/:id',
+          onPages: (path) => <Page>[
+            MaterialPage(child: HomePage()),
+            MaterialPage(child: UsersPage()),
+            MaterialPage(
+                child: UserPage(
+              path: path,
+            )),
+          ],
+        ),
+        CrawlinkRouter(
           url: '/profile',
-          onPush: (path) => <Page>[
+          onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: ProfilePage()),
           ],
         ),
         CrawlinkRouter(
-          context: context,
           url: '/settings',
-          onPush: (path) => <Page>[
+          onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: SettingsPage()),
           ],

@@ -16,7 +16,7 @@ class UsersPage extends StatelessWidget {
             TextButton(
                 onPressed: () {
                   Crawlink.of(context)!
-                      .push(context, ':id', params: {'id': "1"});
+                      .push(context, '/users/:id', params: {'id': "1"});
                 },
                 child: Text('Open User 1')),
             SizedBox(
@@ -25,7 +25,7 @@ class UsersPage extends StatelessWidget {
             TextButton(
                 onPressed: () {
                   Crawlink.of(context)!
-                      .push(context, ':id', params: {'id': "2"});
+                      .push(context, '/users/:id', params: {'id': "2"});
                 },
                 child: Text('Open User 2')),
             SizedBox(
@@ -34,7 +34,7 @@ class UsersPage extends StatelessWidget {
             TextButton(
                 onPressed: () {
                   Crawlink.of(context)!
-                      .push(context, ':id', params: {'id': "3"});
+                      .push(context, '/users/:id', params: {'id': "3"});
                 },
                 child: Text('Open  User 3')),
           ],

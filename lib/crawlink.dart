@@ -6,7 +6,12 @@ import 'package:flutter/widgets.dart';
 class Crawlink extends InheritedWidget {
   late final CrawlinkRouteInformationParser routeInformationParser;
   late final CrawlinkRouterDelegate routerDelegate;
-  late final CrawlinkBackButtonDispatcher backButtonDispatcher;
+
+  /// List of routers to be register
+  /// eg.
+  ///
+  /// ```dart
+  /// ```
   final List<CrawlinkRouter> routers;
 
   final CrawlinkRouter? fallbackRouter;
@@ -24,7 +29,6 @@ class Crawlink extends InheritedWidget {
         ) {
     routeInformationParser = CrawlinkRouteInformationParser(this);
     routerDelegate = CrawlinkRouterDelegate(this);
-    backButtonDispatcher = CrawlinkBackButtonDispatcher(routerDelegate);
     _initPreviousCrawlink(context);
   }
 
@@ -78,25 +82,83 @@ class _ValueHolder<T> {
 /// Router trigger infromation
 class CrawlinkRouter {
   /// URL for routing
-  /// eg. 'root/path/:id/view'
+  /// * e.g.
+  ///
+  /// ```dart
+  /// url: '/'
+  /// ```
+  /// ```dart
+  /// url: '/root/path/:id/view'
+  /// ```
   final String url;
 
-  // String _fullUrl;
-
   /// Trigger when new url pushed to the navigator,
-  /// Return [List<MaterialPage>]
-  final List<Page> Function(CrawlinkRoutePath path) onPush;
+  /// Return [List<Page>]
+  ///
+  /// * e.g.
+  ///
+  /// ```dart
+  /// onPush: (CrawlinkRoutePath path) => <Page>[HomePage(path:path)]
+  /// ```
+  final List<Page> Function(CrawlinkRoutePath path) onPages;
 
-  /// Override default back locatoin with custome.
-  final Future<String> Function(CrawlinkRoutePath path)? onPop;
+  /// Check the router path and return new path if check failed.
+  /// Return a [CrawlinkRoutePath] path from onPush to navigate
+  /// Return the same path parameter if no change on the route navigation.
+  ///
+  /// * e.g.
+  ///
+  /// ##### Default navigation
+  /// ```dart
+  /// onPush : (CrawlinkRoutePath path) async => path;
+  /// ```
+  /// ##### Custome navigation
+  /// ```dart
+  /// onPush : (CrawlinkRoutePath path) async {
+  ///     // Do something
+  ///     // Construct new path if required
+  ///   return new CrawlinkRoutePath(url:<new Url>, params:<new parms>, data: <new data>)
+  /// }
+  /// ```
+  final Future<CrawlinkRoutePath> Function(CrawlinkRoutePath path)? onPush;
 
-  /// Check the new route can be allowed or not.
-  final Future<bool> Function(CrawlinkRoutePath path)? canPush;
+  /// Override default back routing implementation.
+  /// Return a [CrawlinkRoutePath] path from onPop to navigate
+  /// Return the same path parameter if not change on back navigation.
+  ///
+  /// This function need to implement on back navigation from deep link page.
+  ///
+  /// * e.g.
+  ///
+  /// ##### Default back navigation
+  /// ```dart
+  /// onPop : (CrawlinkRoutePath path) => path;
+  /// ```
+  /// ##### Default back navigation
+  /// ```dart
+  /// onPop : (CrawlinkRoutePath path) {
+  ///     // Do something
+  ///     // Construct new path if required
+  ///   return new CrawlinkRoutePath(url:<new Url>, params:<new parms>, data: <new data>)
+  /// }
+  /// ```
+  final Future<CrawlinkRoutePath> Function(CrawlinkRoutePath path)? onPop;
 
   /// Resolve route data before actual navigation, this data can be retrived
   /// `path.data` in onPush
+  ///
+  /// * e.g.
+  /// ```dart
+  /// onResolve: (
+  ///   CrawlinkRoutePath path, Map<String, dynamic> data) async{
+  ///       // Prepare data to before route
+  ///       // ...
+  ///
+  ///        return data;
+  ///   }
+  /// ```
   final Future<Map<String, dynamic>> Function(
-      CrawlinkRoutePath path, Map<String, dynamic> data)? resolve;
+      CrawlinkRoutePath path, Map<String, dynamic> data)? onResolve;
 
   /// Provide a router progress widget to display till route completed
   // final Page Function(  CrawlinkRoutePath path)?
@@ -108,12 +170,11 @@ class CrawlinkRouter {
   late String _sanitizedUrl;
 
   CrawlinkRouter({
-    required BuildContext context,
     required this.url,
-    required this.onPush,
+    required this.onPages,
+    this.onPush,
     this.onPop,
-    this.canPush,
-    this.resolve,
+    this.onResolve,
     // this.progressPage,
   }) {
     // Refactor given path
@@ -173,7 +234,7 @@ class CrawlinkRoutePath {
 
     // Add dynamic params in the url
     _sanitizedUrl =
-        sanitizeUrl(_segments.map((segment) => segment._value).join());
+        sanitizeUrl(_segments.map((segment) => segment._value).join('/'));
   }
 
   static String sanitizeUrl(String url) {
@@ -263,18 +324,6 @@ class CrawlinkRoutePath {
   }
 }
 
-class CrawlinkBackButtonDispatcher extends RootBackButtonDispatcher {
-  // 2
-  final CrawlinkRouterDelegate _routerDelegate;
-
-  CrawlinkBackButtonDispatcher(this._routerDelegate) : super();
-
-  // 3
-  Future<bool> didPopRoute() {
-    return _routerDelegate.popRoute();
-  }
-}
-
 /// CrawlinkRouteInformationParser convert the url to
 /// [CrawlinkRoutePath]
 class CrawlinkRouteInformationParser
@@ -349,7 +398,6 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
                 return false;
               }
 
-              notifyListeners();
               return true;
             })
         : Container();
@@ -365,28 +413,24 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
     CrawlinkRouter? router = path._router ?? path.findRouter(crawlink);
     if (router != null) {
       // Check new rout can be pushed or not
-      bool canPush = true;
-      if (router.canPush != null) {
-        canPush = await router.canPush!(path);
+      if (router.onPush != null) {
+        path = await router.onPush!(path);
       }
 
       // Resolve Data if required before route
       var data = path.data ?? {};
-      if (canPush) {
-        if (router.resolve != null) {
-          data = await router.resolve!(path, data);
-        }
-
-        // Get List of Pages to be render in UI
-        var pages = router.onPush(path);
-
-        path.data = data;
-        path._router = router;
-        path._pages = pages;
-
-        _path = path;
-        // _setNewPath(path);
+      if (router.onResolve != null) {
+        data = await router.onResolve!(path, data);
       }
+
+      // Get List of Pages to be render in UI
+      var pages = router.onPages(path);
+
+      path.data = data;
+      path._router = router;
+      path._pages = pages;
+
+      _path = path;
     }
   }
 
@@ -435,10 +479,10 @@ extension BuildContextCrawlinkExtension on BuildContext {
   }
 
   /// Current Back button Dispatcher
-  CrawlinkBackButtonDispatcher? get backButtonDispatcher {
-    var crawlink = Crawlink.of(this);
-    if (crawlink != null) {
-      return crawlink.backButtonDispatcher;
-    }
-  }
+  // CrawlinkBackButtonDispatcher? get backButtonDispatcher {
+  //   var crawlink = Crawlink.of(this);
+  //   if (crawlink != null) {
+  //     return crawlink.backButtonDispatcher;
+  //   }
+  // }
 }
