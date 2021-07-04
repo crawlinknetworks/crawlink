@@ -44,6 +44,8 @@ class _MyAppState extends State<MyApp> {
           return MaterialApp.router(
             routeInformationParser: context.routeInformationParser!,
             routerDelegate: context.routerDelegate!,
+            backButtonDispatcher: context.backButtonDispatcher!,
+            routeInformationProvider: context.routeInformationProvider!,
           );
         },
       ),

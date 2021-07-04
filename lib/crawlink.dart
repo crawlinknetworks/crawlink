@@ -6,6 +6,8 @@ import 'package:flutter/widgets.dart';
 class Crawlink extends InheritedWidget {
   late final CrawlinkRouteInformationParser routeInformationParser;
   late final CrawlinkRouterDelegate routerDelegate;
+  late final CrawlinkBackButtonDispatcher backButtonDispatcher;
+  late final PlatformRouteInformationProvider routeInformationProvider;
 
   /// List of routers to be register
   /// eg.
@@ -29,6 +31,10 @@ class Crawlink extends InheritedWidget {
         ) {
     routeInformationParser = CrawlinkRouteInformationParser(this);
     routerDelegate = CrawlinkRouterDelegate(this);
+    backButtonDispatcher = CrawlinkBackButtonDispatcher(routerDelegate);
+    routeInformationProvider = PlatformRouteInformationProvider(
+        initialRouteInformation: RouteInformation(location: '/'));
+
     _initPreviousCrawlink(context);
   }
 
@@ -321,6 +327,16 @@ class CrawlinkRoutePath {
   }
 }
 
+class CrawlinkBackButtonDispatcher extends RootBackButtonDispatcher {
+  final CrawlinkRouterDelegate _routerDelegate;
+
+  CrawlinkBackButtonDispatcher(this._routerDelegate) : super();
+
+  Future<bool> didPopRoute() {
+    return _routerDelegate.popRoute();
+  }
+}
+
 /// CrawlinkRouteInformationParser convert the url to
 /// [CrawlinkRoutePath]
 class CrawlinkRouteInformationParser
@@ -376,10 +392,6 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
     notifyListeners();
   }
 
-  pop() {
-    notifyListeners();
-  }
-
   @override
   Widget build(BuildContext context) {
     return pages.length > 0
@@ -391,18 +403,7 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
                 return false;
               }
 
-              /// find the back path
-              if (_path != null) {
-                CrawlinkRouter? router =
-                    _path!._router ?? _path!.findRouter(crawlink);
-                if (router != null) {
-                  // Check new rout can be pushed or not
-                  if (router.onPush != null) {
-                    _path = router.onPop!(_path!);
-                    notifyListeners();
-                  }
-                }
-              }
+              handleOnPopPage(_path!);
               return true;
             })
         : Container();
@@ -432,6 +433,18 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
       _path = path;
     }
   }
+
+  void handleOnPopPage(CrawlinkRoutePath path) async {
+    CrawlinkRouter? router = path._router ?? path.findRouter(crawlink);
+    if (router != null) {
+      // Check new rout can be pushed or not
+      if (router.onPop != null) {
+        _path = router.onPop!(path);
+        crawlink.routeInformationProvider.routerReportsNewRouteInformation(
+            RouteInformation(location: _path!.location));
+      }
+    }
+  }
 }
 
 /// Extention of build context
@@ -449,6 +462,20 @@ extension BuildContextCrawlinkExtension on BuildContext {
     var crawlink = Crawlink.of(this);
     if (crawlink != null) {
       return crawlink.routerDelegate;
+    }
+  }
+
+  CrawlinkBackButtonDispatcher? get backButtonDispatcher {
+    var crawlink = Crawlink.of(this);
+    if (crawlink != null) {
+      return crawlink.backButtonDispatcher;
+    }
+  }
+
+  RouteInformationProvider? get routeInformationProvider {
+    var crawlink = Crawlink.of(this);
+    if (crawlink != null) {
+      return crawlink.routeInformationProvider;
     }
   }
 }
