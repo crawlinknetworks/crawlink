@@ -122,27 +122,20 @@ class CrawlinkRouter {
   /// ```
   final Future<CrawlinkRoutePath> Function(CrawlinkRoutePath path)? onPush;
 
-  /// Override default back routing implementation.
-  /// Return a [CrawlinkRoutePath] path from onPop to navigate
-  /// Return the same path parameter if not change on back navigation.
-  ///
-  /// This function need to implement on back navigation from deep link page.
+  ///  Find the return the back path of current route
   ///
   /// * e.g.
   ///
-  /// ##### Default back navigation
+  /// ##### Back navigation
+  ///
   /// ```dart
-  /// onPop : (CrawlinkRoutePath path) => path;
-  /// ```
-  /// ##### Default back navigation
-  /// ```dart
-  /// onPop : (CrawlinkRoutePath path) {
+  /// onPop : (CrawlinkRoutePath currentPath) {
   ///     // Do something
-  ///     // Construct new path if required
-  ///   return new CrawlinkRoutePath(url:<new Url>, params:<new parms>, data: <new data>)
+  ///     // Construct new path to display on back press
+  ///   return new CrawlinkRoutePath(url:<new back Url>, params:<new parms>, data: <new data>)
   /// }
   /// ```
-  final Future<CrawlinkRoutePath> Function(CrawlinkRoutePath path)? onPop;
+  final CrawlinkRoutePath Function(CrawlinkRoutePath path)? onPop;
 
   /// Resolve route data before actual navigation, this data can be retrived
   /// `path.data` in onPush
@@ -398,14 +391,22 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
                 return false;
               }
 
+              /// find the back path
+              if (_path != null) {
+                CrawlinkRouter? router =
+                    _path!._router ?? _path!.findRouter(crawlink);
+                if (router != null) {
+                  // Check new rout can be pushed or not
+                  if (router.onPush != null) {
+                    _path = router.onPop!(_path!);
+                    notifyListeners();
+                  }
+                }
+              }
+
               return true;
             })
         : Container();
-  }
-
-  @override
-  Future<bool> popRoute() {
-    return super.popRoute();
   }
 
   @override

@@ -8,6 +8,9 @@ class UserPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text("User"),
+      ),
       body: Center(
           child: Column(
         mainAxisSize: MainAxisSize.min,
