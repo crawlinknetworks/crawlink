@@ -41,7 +41,6 @@ class _MyAppState extends State<MyApp> {
       context: context,
       builder: Builder(
         builder: (context) {
-          // print('MyApp : builder');
           return MaterialApp.router(
             routeInformationParser: context.routeInformationParser!,
             routerDelegate: context.routerDelegate!,

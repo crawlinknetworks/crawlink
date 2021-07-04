@@ -153,6 +153,10 @@ class CrawlinkRouter {
   final Future<Map<String, dynamic>> Function(
       CrawlinkRoutePath path, Map<String, dynamic> data)? onResolve;
 
+  final Widget Function(
+    CrawlinkRoutePath path,
+  )? onLoadingWidget;
+
   /// Provide a router progress widget to display till route completed
   // final Page Function(  CrawlinkRoutePath path)?
   //     progressPage;
@@ -168,7 +172,7 @@ class CrawlinkRouter {
     this.onPush,
     this.onPop,
     this.onResolve,
-    // this.progressPage,
+    this.onLoadingWidget,
   }) {
     // Refactor given path
     _sanitizedUrl = CrawlinkRoutePath.sanitizeUrl(url);
@@ -349,9 +353,7 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
 
   CrawlinkRoutePath? _path;
 
-  CrawlinkRouterDelegate(this.crawlink) {
-    print('CrawlinkRouterDelegate:init');
-  }
+  CrawlinkRouterDelegate(this.crawlink) {}
 
   CrawlinkRoutePath? get currentConfiguration {
     return _path;
@@ -380,8 +382,6 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
 
   @override
   Widget build(BuildContext context) {
-    print('build: ${pages.length}');
-
     return pages.length > 0
         ? Navigator(
             key: _navigatorKey,
@@ -403,7 +403,6 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
                   }
                 }
               }
-
               return true;
             })
         : Container();
@@ -418,7 +417,6 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
         path = await router.onPush!(path);
       }
 
-      // Resolve Data if required before route
       var data = path.data ?? {};
       if (router.onResolve != null) {
         data = await router.onResolve!(path, data);
@@ -434,31 +432,6 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
       _path = path;
     }
   }
-
-  // _setNewPath(path, {bool replace = false}) {
-  //   if (_oldPath != path) {
-  //     _oldPath = path;
-  //     _path = path;
-  //     notifyListeners();
-  //   }
-  // }
-
-  // void navigatePath(CrawlinkRoutePath path) {
-  //   // print('HomeRouterDelegate: navigate : path = $path');
-  //   _path = path;
-  //   notifyListeners();
-  // }
-
-  // Future<CrawlinkRoutePath> navigate(String location,
-  //     {Map<String, dynamic>? data, Map<String, String>? params}) async {
-  //   // print('HomeRouterDelegate: navigateLocation : location = $location');
-  //   var path = await routeParser
-  //       .parseRouteInformation(RouteInformation(location: location));
-  //   path.data = data;
-  //   navigatePath(path);
-
-  //   return path;
-  // }
 }
 
 /// Extention of build context
@@ -478,12 +451,4 @@ extension BuildContextCrawlinkExtension on BuildContext {
       return crawlink.routerDelegate;
     }
   }
-
-  /// Current Back button Dispatcher
-  // CrawlinkBackButtonDispatcher? get backButtonDispatcher {
-  //   var crawlink = Crawlink.of(this);
-  //   if (crawlink != null) {
-  //     return crawlink.backButtonDispatcher;
-  //   }
-  // }
 }
