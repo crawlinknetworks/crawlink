@@ -14,7 +14,6 @@ crawlink: <latest-version>
 ##  Usage
 
 ```dart
-
 void main() {
   setPathUrlStrategy();
   runApp(MyApp());
@@ -22,6 +21,7 @@ void main() {
 
 class MyApp extends StatefulWidget {
   MyApp({Key? key}) : super(key: key) {
+    print('MyApp:init');
   }
 
   @override
@@ -39,6 +39,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    print('MyApp : build');
     return _crawlink;
   }
 
@@ -66,8 +67,9 @@ class _MyAppState extends State<MyApp> {
             MaterialPage(child: HomePage()),
             MaterialPage(child: UsersPage()),
           ],
-          onPush: (path)=> path;
-          onResolve(path, data) => data;
+          onPush: (path) async => path,
+          onPop: (path) => CrawlinkRoutePath('/'),
+          onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
           url: '/users/:id',
@@ -79,6 +81,9 @@ class _MyAppState extends State<MyApp> {
               path: path,
             )),
           ],
+          onPush: (path) async => path,
+          onPop: (path) => CrawlinkRoutePath('/users'),
+          onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
           url: '/profile',
@@ -86,6 +91,9 @@ class _MyAppState extends State<MyApp> {
             MaterialPage(child: HomePage()),
             MaterialPage(child: ProfilePage()),
           ],
+          onPush: (path) async => path,
+          onPop: (path) => CrawlinkRoutePath('/'),
+          onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
           url: '/settings',
@@ -93,6 +101,9 @@ class _MyAppState extends State<MyApp> {
             MaterialPage(child: HomePage()),
             MaterialPage(child: SettingsPage()),
           ],
+          onPush: (path) async => path,
+          onPop: (path) => CrawlinkRoutePath('/'),
+          onResolve: (path, data) async => data,
         ),
       ],
     );

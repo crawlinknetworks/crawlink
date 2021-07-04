@@ -60,6 +60,9 @@ class _MyAppState extends State<MyApp> {
             MaterialPage(child: HomePage()),
             MaterialPage(child: UsersPage()),
           ],
+          onPush: (path) async => path,
+          onPop: (path) => CrawlinkRoutePath('/'),
+          onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
           url: '/users/:id',
@@ -71,6 +74,9 @@ class _MyAppState extends State<MyApp> {
               path: path,
             )),
           ],
+          onPush: (path) async => path,
+          onPop: (path) => CrawlinkRoutePath('/users'),
+          onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
           url: '/profile',
@@ -78,6 +84,9 @@ class _MyAppState extends State<MyApp> {
             MaterialPage(child: HomePage()),
             MaterialPage(child: ProfilePage()),
           ],
+          onPush: (path) async => path,
+          onPop: (path) => CrawlinkRoutePath('/'),
+          onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
           url: '/settings',
@@ -85,6 +94,9 @@ class _MyAppState extends State<MyApp> {
             MaterialPage(child: HomePage()),
             MaterialPage(child: SettingsPage()),
           ],
+          onPush: (path) async => path,
+          onPop: (path) => CrawlinkRoutePath('/'),
+          onResolve: (path, data) async => data,
         ),
       ],
     );
