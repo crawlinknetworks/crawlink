@@ -4,6 +4,9 @@ A simple routing library for flutter apps based on Navigator 2.0
 
 ## Getting Started
 
+![](https://github.com/crawlinknetworks/crawlink/blob/master/screenshots/crawlink_web_demo.gif?raw=true)
+![](https://github.com/crawlinknetworks/crawlink/blob/master/screenshots/crawlink_mobile_demo.gif?raw=true)
+
 ## Install
 
 #### pubspec.yaml
@@ -51,6 +54,8 @@ class _MyAppState extends State<MyApp> {
           return MaterialApp.router(
             routeInformationParser: context.routeInformationParser!,
             routerDelegate: context.routerDelegate!,
+            backButtonDispatcher: context.backButtonDispatcher!,
+            routeInformationProvider: context.routeInformationProvider!,
           );
         },
       ),
