@@ -1,3 +1,7 @@
+## 0.0.10
+
+* Screen size variable added in Path.
+
 ## 0.0.9
 
 * Documentation Updated.
