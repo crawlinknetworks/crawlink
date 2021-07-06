@@ -18,7 +18,7 @@ class HomePage extends StatelessWidget {
           ),
           TextButton(
               onPressed: () {
-                Crawlink.of(context)!.push(context, '/profile');
+                Crawlink.of(context).push('/profile');
               },
               child: Text('Open Profile')),
           SizedBox(
@@ -26,7 +26,7 @@ class HomePage extends StatelessWidget {
           ),
           TextButton(
               onPressed: () {
-                Crawlink.of(context)!.push(context, '/settings');
+                Crawlink.of(context).push('/settings');
               },
               child: Text('Open Settings')),
           SizedBox(
@@ -34,7 +34,7 @@ class HomePage extends StatelessWidget {
           ),
           TextButton(
               onPressed: () {
-                Crawlink.of(context)!.push(context, '/users');
+                Crawlink.of(context).push('/users');
               },
               child: Text('Open Users')),
         ],

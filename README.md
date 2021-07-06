@@ -16,15 +16,39 @@ crawlink: <latest-version>
 ```
 
 ## Push a  route
-
+Syntax:
+```dart 
+Crawlink.of(context).pushpush(
+    String url, {
+    Map<String, String> params = const {},
+    Map<String, dynamic>? data,
+  });
 ```
-Crawlink.of(context)!.push(context, '/users/:id', params: {'id': "1"}, data: {'user':<user>});
+
+```dart
+ 
+Crawlink.of(context).push('/' );
+
+// or,
+
+Crawlink.of(context).push('/users/:id', params: {'id': "1"}, data: {'user':<user>});
 ```
 
 ## Pop a  route
 
 ```
 Crawlink.of(context)!.pop()
+```
+
+## Define a route
+
+``` dart
+CrawlinkRouter(
+  url: '/',  
+  onPages: (path) => <Page>[
+    MaterialPage(child: HomePage()),
+  ],
+),
 ```
 
 ##  Full Example Usage
@@ -85,9 +109,6 @@ class _MyAppState extends State<MyApp> {
             MaterialPage(child: HomePage()),
             MaterialPage(child: UsersPage()),
           ],
-          onPush: (path) async => path,
-          onPop: (path) => CrawlinkRoutePath('/'),
-          onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
           url: '/users/:id',
@@ -103,26 +124,7 @@ class _MyAppState extends State<MyApp> {
           onPop: (path) => CrawlinkRoutePath('/users'),
           onResolve: (path, data) async => data,
         ),
-        CrawlinkRouter(
-          url: '/profile',
-          onPages: (path) => <Page>[
-            MaterialPage(child: HomePage()),
-            MaterialPage(child: ProfilePage()),
-          ],
-          onPush: (path) async => path,
-          onPop: (path) => CrawlinkRoutePath('/'),
-          onResolve: (path, data) async => data,
-        ),
-        CrawlinkRouter(
-          url: '/settings',
-          onPages: (path) => <Page>[
-            MaterialPage(child: HomePage()),
-            MaterialPage(child: SettingsPage()),
-          ],
-          onPush: (path) async => path,
-          onPop: (path) => CrawlinkRoutePath('/'),
-          onResolve: (path, data) async => data,
-        ),
+        
       ],
     );
   }

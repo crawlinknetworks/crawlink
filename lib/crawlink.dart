@@ -62,11 +62,28 @@ class Crawlink extends InheritedWidget {
   }
 
   /// Return Crawlink nearest [Crawlink] instance
-  static Crawlink? of(BuildContext context) =>
-      context.dependOnInheritedWidgetOfExactType<Crawlink>();
+  static Crawlink of(BuildContext context) {
+    Crawlink? crawlink = context.dependOnInheritedWidgetOfExactType<Crawlink>();
 
-  void push(BuildContext context, String url,
-      {Map<String, String> params = const {}, Map<String, dynamic>? data}) {
+    assert(() {
+      if (crawlink == null) {
+        throw FlutterError(
+          'Crawlink routing operation requested with a context that does not include a Crawlink Navigator initialized before.\n'
+          'The context used to push or pop Crawlink routes from the Crawlink must be that of a '
+          'widget that is a descendant of a Crawlink widget.',
+        );
+      }
+      return true;
+    }());
+
+    return crawlink!;
+  }
+
+  void push(
+    String url, {
+    Map<String, String> params = const {},
+    Map<String, dynamic>? data,
+  }) {
     var sanitizedUrl = CrawlinkRoutePath.sanitizeUrl(url);
     CrawlinkRoutePath path =
         CrawlinkRoutePath('$sanitizedUrl', params: params, data: data);
