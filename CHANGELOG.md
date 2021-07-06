@@ -1,3 +1,7 @@
+## 0.0.9
+
+* Documentation Updated.
+
 ## 0.0.8
 
 * Handled uncaught exception.

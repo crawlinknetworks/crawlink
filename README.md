@@ -18,7 +18,7 @@ crawlink: <latest-version>
 ## Push a  route
 Syntax:
 ```dart 
-Crawlink.of(context).pushpush(
+Crawlink.of(context).push(
     String url, {
     Map<String, String> params = const {},
     Map<String, dynamic> data = const {},
@@ -31,13 +31,17 @@ Crawlink.of(context).push('/' );
 
 // or,
 
+Crawlink.of(context).push('/users/1',   data: {'user':<user>});
+
+// or
+
 Crawlink.of(context).push('/users/:id', params: {'id': "1"}, data: {'user':<user>});
 ```
 
 ## Pop a  route
 
 ```
-Crawlink.of(context)!.pop()
+Crawlink.of(context).pop()
 ```
 
 ## Define a route
