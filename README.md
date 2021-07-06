@@ -21,7 +21,7 @@ Syntax:
 Crawlink.of(context).pushpush(
     String url, {
     Map<String, String> params = const {},
-    Map<String, dynamic>? data,
+    Map<String, dynamic> data = const {},
   });
 ```
 

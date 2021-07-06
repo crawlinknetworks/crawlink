@@ -1,5 +1,9 @@
 ## 0.0.5
 
+* Refactored data model.
+
+## 0.0.5
+
 * Refactored code.
 
 ## 0.0.4

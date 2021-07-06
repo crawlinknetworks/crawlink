@@ -82,7 +82,7 @@ class Crawlink extends InheritedWidget {
   void push(
     String url, {
     Map<String, String> params = const {},
-    Map<String, dynamic>? data,
+    Map<String, dynamic> data = const {},
   }) {
     var sanitizedUrl = CrawlinkRoutePath.sanitizeUrl(url);
     CrawlinkRoutePath path =
@@ -229,14 +229,14 @@ class CrawlinkRoutePath {
   late String _sanitizedUrl;
   Map<String, String> _query = {};
   Map<String, String> _params = {};
-  Map<String, dynamic>? data;
+  Map<String, dynamic> data = {};
   CrawlinkRouter? _router;
   List<Page>? _pages;
 
   CrawlinkRoutePath(
     String url, {
     Map<String, String> params = const {},
-    this.data,
+    this.data = const {},
   }) {
     _sanitizedUrl = sanitizeUrl(url);
     _uri = Uri.parse(_sanitizedUrl);
