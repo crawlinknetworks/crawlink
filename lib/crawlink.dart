@@ -16,7 +16,12 @@ class Crawlink extends InheritedWidget {
   /// ```
   final List<CrawlinkRouter> routers;
 
+  /// Fallback router if not matched found
   final CrawlinkRouter? fallbackRouter;
+
+  /// Set the screen breakpont to determine small screen, default: 576 (px).
+  final int smallScreenWidth;
+
   final _ValueHolder<Crawlink> _previousCrawlink = _ValueHolder<Crawlink>();
 
   Crawlink({
@@ -25,6 +30,7 @@ class Crawlink extends InheritedWidget {
     required Builder builder,
     required this.routers,
     this.fallbackRouter,
+    this.smallScreenWidth = 576,
   }) : super(
           key: key,
           child: builder,
@@ -234,6 +240,8 @@ class CrawlinkRoutePath {
   Map<String, dynamic> data = {};
   CrawlinkRouter? _router;
   List<Page>? _pages;
+  Size? _screenSize;
+  bool _isSmallScreen = true;
 
   CrawlinkRoutePath(
     String url, {
@@ -289,6 +297,12 @@ class CrawlinkRoutePath {
 
   /// Uri Query parameter
   Map<String, String> get query => _query;
+
+  /// Screen size, handle routing based on screen size
+  Size? get screenSize => _screenSize;
+
+  /// Screen size, handle routing based on screen size, default true
+  bool get isSmallScreen => _isSmallScreen;
 
   /// Return Path segment by index
   // String? getSegment(index) {
@@ -414,6 +428,13 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
 
   @override
   Widget build(BuildContext context) {
+    // Determine screen with
+    if (_path != null) {
+      _path!._screenSize = MediaQuery.of(context).size;
+      _path!._isSmallScreen =
+          _path!._screenSize!.width < crawlink.smallScreenWidth;
+    }
+
     return pages.length > 0
         ? Navigator(
             key: _navigatorKey,
