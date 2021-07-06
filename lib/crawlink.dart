@@ -246,6 +246,7 @@ class CrawlinkRoutePath {
     _segments.forEach((segment) {
       if (segment._value == null) {
         segment._value = params[segment._param];
+        _params[segment._param] = params[segment._param]!;
         params.remove(segment._param);
       }
     });

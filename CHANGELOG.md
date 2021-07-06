@@ -1,4 +1,8 @@
-## 0.0.5
+## 0.0.7
+
+* Fixed parg.params issue.
+
+## 0.0.6
 
 * Refactored data model.
 
