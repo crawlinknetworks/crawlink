@@ -1,3 +1,7 @@
+## 0.0.8
+
+* Handled uncaught exception.
+
 ## 0.0.7
 
 * Fixed parg.params issue.

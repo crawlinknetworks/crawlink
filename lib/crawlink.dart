@@ -42,7 +42,9 @@ class Crawlink extends InheritedWidget {
     // TODO : Workaround. Error: dependOnInheritedWidgetOfExactType<Crawlink>() or dependOnInheritedElement() was called before _UsersRouterPageState.initState() completed.
     // Execure in next frame.
     await Future.delayed(Duration.zero);
-    _previousCrawlink._value = Crawlink.of(context);
+    try {
+      _previousCrawlink._value = Crawlink.of(context);
+    } catch (e) {}
   }
 
   String get activePath {
@@ -436,7 +438,7 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
         path = await router.onPush!(path);
       }
 
-      var data = path.data ?? {};
+      var data = path.data;
       if (router.onResolve != null) {
         data = await router.onResolve!(path, data);
       }
