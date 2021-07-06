@@ -1,6 +1,6 @@
 name: crawlink
 description: Simple flutter url routing based on Navigator 2.0.
-version: 0.0.8
+version: 0.0.9
 homepage: https://crawlink.com
 git: https://github.com/crawlinknetworks/crawlink
 repository: https://github.com/crawlinknetworks/crawlink
