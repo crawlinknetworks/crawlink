@@ -22,52 +22,43 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  late Crawlink _crawlink;
 
   @override
   void initState() {
     super.initState();
-    _crawlink = _initCrawlink();
   }
 
   @override
   Widget build(BuildContext context) {
     print('MyApp : build');
-    return _crawlink;
-  }
-
-  _initCrawlink() {
     return Crawlink(
-      context: context,
-      builder: Builder(
-        builder: (context) {
-          return MaterialApp.router(
-            routeInformationParser: context.routeInformationParser!,
-            routerDelegate: context.routerDelegate!,
-            backButtonDispatcher: context.backButtonDispatcher!,
-            routeInformationProvider: context.routeInformationProvider!,
-          );
-        },
-      ),
+      key: ValueKey('MainCrawlink'),
+      builder: (context) {
+        return MaterialApp.router(
+          routeInformationParser: context.routeInformationParser,
+          routerDelegate: context.routerDelegate,
+          backButtonDispatcher: context.backButtonDispatcher,
+          routeInformationProvider: context.routeInformationProvider,
+        );
+      },
       routers: [
         CrawlinkRouter(
-          url: '/',
+          path: '/',
           onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
           ],
         ),
         CrawlinkRouter(
-          url: '/users',
+          path: '/users',
           onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: UsersPage()),
           ],
           onPush: (path) async => path,
-          onPop: (path) => CrawlinkRoutePath('/'),
           onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
-          url: '/users/:id',
+          path: '/users/:id',
           onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: UsersPage()),
@@ -77,27 +68,24 @@ class _MyAppState extends State<MyApp> {
             )),
           ],
           onPush: (path) async => path,
-          onPop: (path) => CrawlinkRoutePath('/users'),
           onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
-          url: '/profile',
+          path: '/profile',
           onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: ProfilePage()),
           ],
           onPush: (path) async => path,
-          onPop: (path) => CrawlinkRoutePath('/'),
           onResolve: (path, data) async => data,
         ),
         CrawlinkRouter(
-          url: '/settings',
+          path: '/settings',
           onPages: (path) => <Page>[
             MaterialPage(child: HomePage()),
             MaterialPage(child: SettingsPage()),
           ],
           onPush: (path) async => path,
-          onPop: (path) => CrawlinkRoutePath('/'),
           onResolve: (path, data) async => data,
         ),
       ],

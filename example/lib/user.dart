@@ -15,7 +15,7 @@ class UserPage extends StatelessWidget {
           child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text('User : ${path.getParams('id')}'),
+          Text('User : ${path.queryParams['id']}'),
         ],
       )),
     );
