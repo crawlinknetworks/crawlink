@@ -11,8 +11,12 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
 
   final List<CrawlinkRouter> routers;
   final CrawlinkRouter? fallbackRouter;
+  final RouteInformationProvider routeInformationProvider;
 
-  CrawlinkRouterDelegate({required this.routers, this.fallbackRouter}) {}
+  CrawlinkRouterDelegate(
+      {required this.routers,
+      this.fallbackRouter,
+      required this.routeInformationProvider}) {}
 
   CrawlinkRoutePath? get currentConfiguration {
     return _path;
@@ -28,10 +32,22 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
     return [];
   }
 
-  void push(path) async {
+  void push(CrawlinkRoutePath path) async {
+    path.historyPath = _path;
     _path = path;
     notifyListeners();
     await setNewRoutePath(path);
+    notifyListeners();
+  }
+
+  void pop<T>(T result) async {
+    assert(_path!.historyPath == null);
+    _path = _path!.historyPath!;
+    if (_path!.completer != null) {
+      _path!.completer!.complete(result);
+    }
+    notifyListeners();
+    await setNewRoutePath(_path!);
     notifyListeners();
   }
 
@@ -57,6 +73,11 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
               return true;
             })
         : Container();
+  }
+
+  @override
+  Future<void> setInitialRoutePath(CrawlinkRoutePath configuration) {
+    return setNewRoutePath(configuration);
   }
 
   @override
@@ -110,13 +131,11 @@ class CrawlinkRouterDelegate extends RouterDelegate<CrawlinkRoutePath>
   }
 
   void handleOnPopPage(CrawlinkRoutePath path) async {
-    // CrawlinkRouter? router = path.router ?? path.findRouter(crawlink);
-    // if (router != null) {
-    // Check new rout can be pushed or not
-    // if (router.onPop != null) {
-    //   crawlink.routeInformationProvider.routerReportsNewRouteInformation(
-    //       RouteInformation(location: _path!.location));
-    // }
-    // }
+    if (path.historyPath != null) {
+      routeInformationProvider.routerReportsNewRouteInformation(
+          _path!.historyPath!.routeInformation);
+      _path = path.historyPath;
+      notifyListeners();
+    }
   }
 }

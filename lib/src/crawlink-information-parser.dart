@@ -19,9 +19,7 @@ class CrawlinkRouteInformationParser
 
   @override
   RouteInformation restoreRouteInformation(CrawlinkRoutePath path) {
-    var info = RouteInformation(
-      location: path.absoluteUri.toString(),
-    );
+    var info = path.routeInformation;
 
     return info;
   }

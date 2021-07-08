@@ -20,6 +20,9 @@ class CrawlinkRoutePath {
   late final Uri machableUri;
   late final Uri activeUri;
   late final Uri absoluteUri;
+  CrawlinkRoutePath? historyPath;
+
+  late final RouteInformation routeInformation;
 
   CrawlinkRoutePath({
     required this.activePath,
@@ -27,11 +30,13 @@ class CrawlinkRoutePath {
     this.completer,
     Map<String, String> params = const {},
     this.data = const {},
+    this.historyPath,
   }) {
     machableUri = Uri.parse(activePath);
     activeUri = _parsePath(activePath, params);
 
     absoluteUri = Uri.parse(initialPath).resolveUri(activeUri);
+    routeInformation = RouteInformation(location: absoluteUri.toString());
   }
 
   Uri _parsePath(String currentPath, Map<String, String> givenParams) {

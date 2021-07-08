@@ -55,14 +55,19 @@ class CrawlinkState extends State<Crawlink> {
   void initState() {
     super.initState();
 
-    _routeInformationParser =
-        CrawlinkRouteInformationParser(initialPath: widget.initialPath);
-    _routerDelegate = CrawlinkRouterDelegate(
-        routers: widget.routers, fallbackRouter: widget.fallbackRouter);
-    _backButtonDispatcher = RootBackButtonDispatcher();
     _routeInformationProvider = PlatformRouteInformationProvider(
       initialRouteInformation: RouteInformation(location: widget.initialPath),
     );
+
+    _routeInformationParser = CrawlinkRouteInformationParser(
+      initialPath: widget.initialPath,
+    );
+    _routerDelegate = CrawlinkRouterDelegate(
+      routeInformationProvider: _routeInformationProvider,
+      routers: widget.routers,
+      fallbackRouter: widget.fallbackRouter,
+    );
+    _backButtonDispatcher = RootBackButtonDispatcher();
 
     _routeInformationProviderCallback = () {
       print('_routeInformationProviderCallback');

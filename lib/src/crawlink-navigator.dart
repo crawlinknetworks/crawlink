@@ -27,9 +27,6 @@ class CrawlinkNavigator extends InheritedWidget {
 
   final String initialPath;
 
-  final _ValueHolder<CrawlinkRoutePath> _activePathValue =
-      _ValueHolder<CrawlinkRoutePath>();
-
   CrawlinkNavigator({
     Key? key,
     required Builder builder,
@@ -44,35 +41,7 @@ class CrawlinkNavigator extends InheritedWidget {
   }) : super(
           key: key,
           child: builder,
-        ) {
-    // _initPreviousCrawlink(context);
-  }
-
-  // Future _initPreviousCrawlink(BuildContext context) async {
-  //   // TODO : Workaround. Error: dependOnInheritedWidgetOfExactType<Crawlink>()
-  //   // or dependOnInheritedElement() was called before _UsersRouterPageState.initState() completed.
-  //   // Execute in next frame.
-  //   await Future.delayed(Duration.zero);
-  //   try {
-  //     _previousCrawlink._value = Crawlink.of(context);
-  //   } catch (e) {}
-  // }
-
-  // String get activePath {
-  //   String path = "";
-  //   if (routerDelegate.currentConfiguration != null) {
-  //     path = routerDelegate.currentConfiguration!.location;
-  //   }
-  //   return CrawlinkRoutePath.sanitizeUrl('$path');
-  // }
-
-  // String get rootPath {
-  //   String path = "";
-  //   if (_previousCrawlink._value != null) {
-  //     path = _previousCrawlink._value!.activePath;
-  //   }
-  //   return CrawlinkRoutePath.sanitizeUrl('$path');
-  // }
+        ) {}
 
   /// Return Crawlink nearest [Crawlink] instance
   static CrawlinkNavigator of(BuildContext context) {
@@ -106,8 +75,6 @@ class CrawlinkNavigator extends InheritedWidget {
       completer: Completer<T>(),
     );
 
-    _activePathValue.value = currentPath;
-
     routerDelegate.push(currentPath);
 
     if (currentPath.completer != null) {
@@ -117,14 +84,10 @@ class CrawlinkNavigator extends InheritedWidget {
     return null;
   }
 
-  void pop(BuildContext context) {
-    Navigator.of(context).pop();
+  void pop<T>(T result) {
+     routerDelegate.pop<T>(result);
   }
 
   @override
   bool updateShouldNotify(covariant InheritedWidget oldWidget) => true;
-}
-
-class _ValueHolder<T> {
-  T? value;
 }
