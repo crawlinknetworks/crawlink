@@ -61,6 +61,9 @@ class CrawlinkRoutePath {
   /// Uri Query parameter
   Map<String, String> get queryParams => activeUri.queryParameters;
 
+  /// Uri Query parameter
+  List<String> get pathSegments => activeUri.pathSegments;
+
   /// Screen size, handle routing based on screen size
   Size? get screenSize => _screenSize;
   set screenSize(size) => _screenSize = size;
